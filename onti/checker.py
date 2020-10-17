@@ -1,66 +1,1 @@
-import os
-import re
-from typing import Tuple, List
-from PIL import Image
-import cv2
-import pytesseract as tes
-
-
-def prepare(s: str):
-    return re.sub(r'[^а-я0-9]', '', s.lower())
-
-
-class RequiredBlock:
-    def __init__(self, pattern: str, threshold: int = 0):
-        self.pattern = pattern
-        self.threshold = threshold
-
-    def score(self, text: str) -> Tuple[str, int]:
-        match = re.search(self.pattern, text)
-        if match:
-            return text[match.regs[0][1]:], 0
-        return '', 100
-
-    def compare(self, text: str) -> Tuple[str, bool]:
-        remaining, score = self.score(text)
-        return remaining, score <= self.threshold
-
-
-class RequiredText:
-    def __init__(self, blocks: List[RequiredBlock]):
-        self.blocks = blocks.copy()
-
-    def score(self, text: str):
-        result = 0
-        for block in self.blocks:
-            text, block_score = block.score(text)
-            result += block_score
-        return result
-
-    def compare(self, text: str):
-        for block in self.blocks:
-            text, block_passed = block.score(text)
-            if not block_passed:
-                return False
-        return True
-
-
-def test():
-    RequiredBlock('Согласие')
-    image = cv2.imread('test.png')
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # image = cv2.medianBlur(image, 3)
-    # image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-    temporary_file_name = '.temp.png'
-    cv2.imwrite(temporary_file_name, image)
-
-    text = tes.image_to_string(Image.open(temporary_file_name), lang='rus')
-    # os.remove(temporary_file_name)
-    prepared_text = prepare(text)
-    print(prepared_text)
-
-
-
-
-if __name__ == '__main__':
-    test()
+import jsonimport osimport refrom typing import Tuple, List, Dictfrom PIL import Imageimport cv2import pytesseract as tesdef prepare(s: str):    return re.sub(r'[^а-я0-9]', '', s.lower())class RequiredBlock:    def __init__(self, pattern: str, threshold: int = 0):        self.pattern = pattern        self.threshold = threshold    def score(self, text: str) -> Tuple[str, int]:        match = re.search(self.pattern, text)        if match:            return text[match.regs[0][1]:], 0        return '', 100    def compare(self, text: str) -> Tuple[str, bool]:        remaining, score = self.score(text)        return remaining, score <= self.thresholdclass RequiredText:    def __init__(self, blocks: List[RequiredBlock]):        self.blocks = blocks.copy()    def score(self, text: str) -> int:        result = 0        for block in self.blocks:            text, block_score = block.score(text)            result += block_score        return result    def compare(self, text: str) -> bool:        for block in self.blocks:            text, block_passed = block.compare(text)            print(f'block({block.pattern}) passed: {block_passed}')            if not block_passed:                return False        return Truedef load_requirements(file_name: str) -> Dict[str, RequiredText]:    with open(file_name, 'r') as file:        requirements_dict = json.load(file)    result = dict()    for text_name, text_data in requirements_dict.items():        result[text_name] = RequiredText([RequiredBlock(block) for block in text_data])    return resultdef test():    requirements = load_requirements('forms.json')    image = cv2.imread('test.png')    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)    # image = cv2.medianBlur(image, 3)    image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]    temporary_file_name = '.temp.png'    cv2.imwrite(temporary_file_name, image)    ocr_image = Image.open(temporary_file_name)    text = tes.image_to_string(ocr_image, lang='rus')    text_upside_down = tes.image_to_string(ocr_image.rotate(180))    # os.remove(temporary_file_name)    prepared_text = prepare(text)    print(prepared_text)    print(f'0deg comparing: {requirements["form1"].compare(prepared_text)}')    print('-' * 30)    prepared_text = prepare(text_upside_down)    print(prepared_text)    print(f'180deg comparing: {requirements["form1"].compare(prepared_text)}')if __name__ == '__main__':    test()
