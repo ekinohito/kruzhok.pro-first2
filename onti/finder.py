@@ -25,12 +25,12 @@ def get_leveled_document(image):  # принимает массив с cv2.imrea
 
     image = cv2.bilateralFilter(image, 9, 75, 75)
 
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)  # H = 255 S = 80 V = 175
-    H = 255
-    S = 100
-    V = 150
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)  # h = 255 s = 80 v = 175
+    h = 255
+    s = 100
+    v = 150
 
-    white = cv2.inRange(hsv, (0, 0, V), (H, S, 255))
+    white = cv2.inRange(hsv, (0, 0, v), (h, s, 255))
 
     kernel = np.ones((100, 100), np.uint8)  # !!!!!!!!!!!!!!!!!!!!!
     white = cv2.dilate(white, kernel, iterations=1)
@@ -63,7 +63,7 @@ def get_leveled_document(image):  # принимает массив с cv2.imrea
     width = max(np.linalg.norm(approx[1] - approx[2]),
                 np.linalg.norm(approx[3] - approx[0]))
 
-    tPoints = np.array([[0, 0],
+    t_points = np.array([[0, 0],
                         [0, height],
                         [width, height],
                         [width, 0]], np.float32)
@@ -71,6 +71,6 @@ def get_leveled_document(image):  # принимает массив с cv2.imrea
     if approx.dtype != np.float32:
         approx = approx.astype(np.float32)
 
-    M = cv2.getPerspectiveTransform(approx, tPoints)
-    newImage = cv2.warpPerspective(orig, M, (int(width), int(height)))
-    return newImage
+    m = cv2.getPerspectiveTransform(approx, t_points)
+    new_image = cv2.warpPerspective(orig, m, (int(width), int(height)))
+    return new_image
