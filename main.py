@@ -1,4 +1,4 @@
-#!./bin/python3
+#!./venv/bin/python3
 
 from onti.checker import main
 
